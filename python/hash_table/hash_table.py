@@ -175,7 +175,14 @@ class HashTable:
         Returns:
             True if key exists, False otherwise
         """
-        return self.get(key) is not None
+        index = self._hash(key)
+        bucket = self.buckets[index]
+        
+        for k, v in bucket:
+            if k == key:
+                return True
+        
+        return False
     
     def keys(self) -> List[Any]:
         """

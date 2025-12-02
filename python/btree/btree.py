@@ -78,6 +78,7 @@ class BTree:
         
         self.t = t
         self.root = BTreeNode(leaf=True)
+        self._size = 0
     
     def search(self, key: Any) -> Optional[Any]:
         """
@@ -132,6 +133,9 @@ class BTree:
             
         Time complexity: O(log n)
         """
+        # Check if key already exists (for size tracking)
+        is_new_key = self.search(key) is None
+        
         root = self.root
         
         # If root is full, tree grows in height
@@ -143,6 +147,10 @@ class BTree:
             self._insert_non_full(new_root, key, value)
         else:
             self._insert_non_full(root, key, value)
+        
+        # Increment size only for new keys
+        if is_new_key:
+            self._size += 1
     
     def _insert_non_full(self, node: BTreeNode, key: Any, value: Any) -> None:
         """
@@ -248,6 +256,10 @@ class BTree:
         # If root is empty but has children, shrink tree
         if len(self.root.keys) == 0 and not self.root.leaf:
             self.root = self.root.children[0]
+        
+        # Decrement size if key was deleted
+        if result:
+            self._size -= 1
         
         return result
     
@@ -482,8 +494,8 @@ class BTree:
             self._inorder_traversal(node.children[-1], result)
     
     def __len__(self) -> int:
-        """Return the number of keys in the B-tree."""
-        return len(self.get_all())
+        """Return the number of keys in the B-tree. O(1) time complexity."""
+        return self._size
     
     def __str__(self) -> str:
         """Return a string representation of the B-tree."""

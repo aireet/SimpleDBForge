@@ -48,6 +48,16 @@ class TestHashTable:
         assert ht.contains('key') is True
         assert ht.contains('nonexistent') is False
     
+    def test_contains_with_none_value(self):
+        """Test contains correctly handles None values."""
+        ht = HashTable()
+        
+        ht.put('key', None)
+        
+        # Key exists even though value is None
+        assert ht.contains('key') is True
+        assert ht.get('key') is None
+    
     def test_keys_values_items(self):
         """Test keys, values, and items methods."""
         ht = HashTable()
