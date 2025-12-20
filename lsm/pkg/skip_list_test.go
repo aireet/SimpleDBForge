@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/aireet/SimpleDBForge/lsm/utils"
+	"github.com/aireet/SimpleDBForge/proto/sdbf"
 )
 
 func TestNewSkipList(t *testing.T) {
@@ -29,7 +30,7 @@ func TestSetAndGet(t *testing.T) {
 	sl := NewSkipList(4, 0.5)
 
 	// 测试插入和获取
-	entry1 := Entry{
+	entry1 := &sdbf.Entry{
 		Key:       "user:1",
 		Value:     []byte("Alice"),
 		Tombstone: false,
@@ -58,7 +59,7 @@ func TestUpdateExistingKey(t *testing.T) {
 	sl := NewSkipList(4, 0.5)
 
 	// 插入初始值
-	entry1 := Entry{
+	entry1 := &sdbf.Entry{
 		Key:       "user:1",
 		Value:     []byte("Alice"),
 		Tombstone: false,
@@ -67,7 +68,7 @@ func TestUpdateExistingKey(t *testing.T) {
 	sl.Set(entry1)
 
 	// 更新值
-	entry2 := Entry{
+	entry2 := &sdbf.Entry{
 		Key:       "user:1",
 		Value:     []byte("Bob"),
 		Tombstone: false,
@@ -94,10 +95,10 @@ func TestAll(t *testing.T) {
 	sl := NewSkipList(4, 0.5)
 
 	// 插入多个条目
-	entries := []Entry{
-		{Key: "user:3", Value: []byte("Charlie")},
-		{Key: "user:1", Value: []byte("Alice")},
-		{Key: "user:2", Value: []byte("Bob")},
+	entries := []*sdbf.Entry{
+		&sdbf.Entry{Key: "user:3", Value: []byte("Charlie")},
+		&sdbf.Entry{Key: "user:1", Value: []byte("Alice")},
+		&sdbf.Entry{Key: "user:2", Value: []byte("Bob")},
 	}
 
 	for _, entry := range entries {
@@ -123,7 +124,7 @@ func TestScan(t *testing.T) {
 	sl := NewSkipList(4, 0.5)
 
 	// 插入多个条目
-	entries := []Entry{
+	entries := []*sdbf.Entry{
 		{Key: "a", Value: []byte("first")},
 		{Key: "b", Value: []byte("second")},
 		{Key: "c", Value: []byte("third")},
@@ -214,7 +215,7 @@ func TestMemoryTracking(t *testing.T) {
 	initialCount := sl.count
 
 	// 插入条目
-	entry := Entry{
+	entry := &sdbf.Entry{
 		Key:   "test_key",
 		Value: []byte("test_value"),
 	}
@@ -231,7 +232,8 @@ func TestMemoryTracking(t *testing.T) {
 	}
 
 	// 更新条目（不改变count）
-	entryUpdated := Entry{
+
+	entryUpdated := &sdbf.Entry{
 		Key:   "test_key",
 		Value: []byte("updated_test_value"),
 	}
@@ -246,8 +248,8 @@ func TestReset(t *testing.T) {
 	sl := NewSkipList(4, 0.5)
 
 	// 插入一些数据
-	entry := Entry{Key: "test", Value: []byte("value")}
-	sl.Set(entry)
+	entry := sdbf.Entry{Key: "test", Value: []byte("value")}
+	sl.Set(&entry)
 
 	if sl.count != 1 {
 		t.Errorf("Expected count 1 before reset, got %d", sl.count)
@@ -269,7 +271,7 @@ func BenchmarkSkipListSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		entry := Entry{
+		entry := &sdbf.Entry{
 			Key:   "key" + string(rune(i)),
 			Value: []byte("value" + string(rune(i))),
 		}
@@ -282,7 +284,7 @@ func BenchmarkSkipListGet(b *testing.B) {
 
 	// 预先插入数据
 	for i := 0; i < 1000; i++ {
-		entry := Entry{
+		entry := &sdbf.Entry{
 			Key:   "key" + string(rune(i)),
 			Value: []byte("value" + string(rune(i))),
 		}
@@ -304,7 +306,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	// 快速连续操作
 	for i := 0; i < 100; i++ {
-		entry := Entry{
+		entry := &sdbf.Entry{
 			Key:   "key" + string(rune(i)),
 			Value: []byte("value" + string(rune(i))),
 		}
@@ -325,11 +327,11 @@ func TestEdgeCases(t *testing.T) {
 	sl := NewSkipList(1, 0.5) // 最小层级
 
 	// 测试空key
-	entry := Entry{
+	entry := sdbf.Entry{
 		Key:   "",
 		Value: []byte("empty_key_value"),
 	}
-	sl.Set(entry)
+	sl.Set(&entry)
 
 	result, found := sl.Get("")
 	if !found {
@@ -341,7 +343,7 @@ func TestEdgeCases(t *testing.T) {
 
 	// 测试特殊字符key
 	specialKey := "!@#$%^&*()"
-	entry2 := Entry{
+	entry2 := &sdbf.Entry{
 		Key:   specialKey,
 		Value: []byte("special_value"),
 	}

@@ -5,13 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aireet/SimpleDBForge/lsm/pkg"
+	"github.com/aireet/SimpleDBForge/proto/sdbf"
 )
 
 // 创建测试用的WAL实例
 func createTestWAL(t *testing.T) (*WAL, string) {
 	// 创建临时目录
 	tmpDir := t.TempDir()
+
 	walPath := filepath.Join(tmpDir, "test.wal")
 
 	t.Log("wal path: ", walPath)
@@ -38,7 +39,7 @@ func TestWAL_BasicWriteRead(t *testing.T) {
 	defer wal.fd.Close()
 
 	// 准备测试数据
-	testEntries := []pkg.Entry{
+	testEntries := []*sdbf.Entry{
 		{
 			Key:       "user:001",
 			Value:     []byte("Alice"),
@@ -123,9 +124,9 @@ func TestWAL_ReadNext(t *testing.T) {
 	defer wal.fd.Close()
 
 	// 写入10条测试数据
-	var testEntries []pkg.Entry
+	var testEntries []*sdbf.Entry
 	for i := 0; i < 10; i++ {
-		entry := pkg.Entry{
+		entry := &sdbf.Entry{
 			Key:       "batch_test:" + string(rune(i+'0')),
 			Value:     []byte("测试数据" + string(rune(i+'0'))),
 			Tombstone: i%3 == 0, // 每3条设置一次删除标记
@@ -148,7 +149,7 @@ func TestWAL_ReadNext(t *testing.T) {
 
 	// 分批读取测试
 	t.Run("分批读取", func(t *testing.T) {
-		var allEntries []pkg.Entry
+		var allEntries []*sdbf.Entry
 		batchSize := 3
 
 		for {
@@ -193,7 +194,7 @@ func TestWAL_LargeData(t *testing.T) {
 		largeValue[i] = byte(i % 256)
 	}
 
-	largeEntry := pkg.Entry{
+	largeEntry := &sdbf.Entry{
 		Key:       "large_data_key",
 		Value:     largeValue,
 		Tombstone: false,
@@ -244,17 +245,17 @@ func TestWAL_MultipleWrites(t *testing.T) {
 	wal, _ := createTestWAL(t)
 	defer wal.fd.Close()
 
-	var allEntries []pkg.Entry
+	var allEntries []*sdbf.Entry
 
 	// 进行3轮写入，每轮写入不同数量的数据
 	rounds := []int{2, 3, 5}
 
 	for round, count := range rounds {
 		t.Run("第"+string(rune(round+1))+"轮写入", func(t *testing.T) {
-			var roundEntries []pkg.Entry
+			var roundEntries []*sdbf.Entry
 
 			for i := 0; i < count; i++ {
-				entry := pkg.Entry{
+				entry := &sdbf.Entry{
 					Key:       "round_" + string(rune(round+'0')) + "_item_" + string(rune(i+'0')),
 					Value:     []byte("round " + string(rune(round+'0')) + " item " + string(rune(i+'0'))),
 					Tombstone: false,
@@ -304,7 +305,7 @@ func TestWAL_ErrorHandling(t *testing.T) {
 	t.Run("已关闭文件的错误处理", func(t *testing.T) {
 		wal.fd.Close()
 
-		entry := pkg.Entry{Key: "test", Value: []byte("value")}
+		entry := &sdbf.Entry{Key: "test", Value: []byte("value")}
 
 		// 写入应该返回错误
 		_, err := wal.Write(entry)
@@ -335,7 +336,7 @@ func BenchmarkWAL_Write(b *testing.B) {
 
 	wal := &WAL{fd: fd}
 
-	entry := pkg.Entry{
+	entry := &sdbf.Entry{
 		Key:     "benchmark_key",
 		Value:   []byte("benchmark_value_with_some_content"),
 		Version: 1,
@@ -361,7 +362,7 @@ func BenchmarkWAL_Read(b *testing.B) {
 
 	// 预先写入一些数据
 	for i := 0; i < 1000; i++ {
-		entry := pkg.Entry{
+		entry := &sdbf.Entry{
 			Key:     "key_" + string(rune(i)),
 			Value:   []byte("value_" + string(rune(i))),
 			Version: int64(i),

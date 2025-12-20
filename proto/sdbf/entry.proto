@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sdbf;
+
+option go_package = "github.com/aireet/SimpleDBForge/lsm/pkg/sdbf";
+
+// Entry 表示数据库中的一个键值对条目
+message Entry {
+    // 键名
+    string key = 1;
+    
+    // 值内容
+    bytes value = 2;
+    
+    // 是否为删除标记（墓碑）
+    bool tombstone = 3;
+    
+    // 数据版本号
+    int64 version = 4;
+}

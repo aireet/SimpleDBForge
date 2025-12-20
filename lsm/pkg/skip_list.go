@@ -6,10 +6,11 @@ import (
 	"unsafe"
 
 	"github.com/aireet/SimpleDBForge/lsm/utils"
+	"github.com/aireet/SimpleDBForge/proto/sdbf"
 )
 
 type Element struct {
-	Entry
+	*sdbf.Entry
 	next []*Element
 }
 
@@ -42,7 +43,7 @@ func NewSkipList(maxLevel int, p float64) *SkipList {
 		rand:     rand.New(rand.NewSource(time.Now().UnixNano())),
 		size:     0,
 		head: &Element{
-			Entry: Entry{
+			Entry: &sdbf.Entry{
 				Key:       "HEAD",
 				Value:     nil,
 				Tombstone: false,
@@ -111,7 +112,7 @@ func (s *SkipList) GetSize() int {
 // Level 1: HEAD → 3 → 6 → 7 → 8 → 9 → 12 → 19 → 21 → 25 → 26
 //
 // 时间复杂度：O(log n)
-func (s *SkipList) Set(entry Entry) {
+func (s *SkipList) Set(entry *sdbf.Entry) {
 	// 从顶层开始搜索，记录每层需要更新的前置节点
 	curr := s.head
 	update := make([]*Element, s.maxLevel)
@@ -167,7 +168,7 @@ func (s *SkipList) Set(entry Entry) {
 	s.count++
 }
 
-func (s *SkipList) Get(key string) (Entry, bool) {
+func (s *SkipList) Get(key string) (*sdbf.Entry, bool) {
 	curr := s.head
 	for i := s.maxLevel - 1; i >= 0; i-- {
 		for curr.next[i] != nil && utils.CompareKey(curr.next[i].Key, key) < 0 {
@@ -178,10 +179,10 @@ func (s *SkipList) Get(key string) (Entry, bool) {
 	if curr != nil && curr.Key == key {
 		return curr.Entry, true
 	}
-	return Entry{}, false
+	return nil, false
 }
 
-func (s *SkipList) Scan(start, end string) []Entry {
+func (s *SkipList) Scan(start, end string) []*sdbf.Entry {
 	curr := s.head
 	for i := s.maxLevel - 1; i >= 0; i-- {
 		for curr.next[i] != nil && utils.CompareKey(curr.next[i].Key, start) < 0 {
@@ -189,7 +190,7 @@ func (s *SkipList) Scan(start, end string) []Entry {
 		}
 	}
 	curr = curr.next[0]
-	entries := make([]Entry, 0)
+	entries := make([]*sdbf.Entry, 0)
 	for curr != nil && utils.CompareKey(curr.Key, end) <= 0 {
 		entries = append(entries, curr.Entry)
 		curr = curr.next[0]
@@ -197,8 +198,8 @@ func (s *SkipList) Scan(start, end string) []Entry {
 	return entries
 }
 
-func (s *SkipList) All() []Entry {
-	all := make([]Entry, s.count)
+func (s *SkipList) All() []*sdbf.Entry {
+	all := make([]*sdbf.Entry, s.count)
 	index := 0
 	for curr := s.head.next[0]; curr != nil; curr = curr.next[0] {
 		all[index] = curr.Entry

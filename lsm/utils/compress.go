@@ -16,7 +16,6 @@ func init() {
 	smallEecoder, _ = zstd.NewWriter(
 		nil,
 		zstd.WithEncoderLevel(zstd.SpeedBetterCompression),
-		zstd.WithEncoderConcurrency(numCpu),
 	)
 	smallDecoder, _ = zstd.NewReader(
 		nil,

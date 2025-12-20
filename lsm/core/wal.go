@@ -8,10 +8,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/bytedance/sonic"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/aireet/SimpleDBForge/lsm/pkg"
 	"github.com/aireet/SimpleDBForge/lsm/utils"
+	"github.com/aireet/SimpleDBForge/proto/sdbf"
 )
 
 var (
@@ -28,7 +28,7 @@ type WAL struct {
 	version string
 }
 
-func (w *WAL) Write(entries ...pkg.Entry) (int, error) {
+func (w *WAL) Write(entries ...*sdbf.Entry) (int, error) {
 
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -52,7 +52,7 @@ func (w *WAL) Write(entries ...pkg.Entry) (int, error) {
 		// 2. 性能优势 ：在小端序机器上无需字节序转换
 		// 3. 标准选择 ：许多网络协议和文件格式采用小端序
 		// data length
-		data, err := sonic.Marshal(entry)
+		data, err := proto.Marshal(entry)
 		if err != nil {
 			return 0, err
 		}
@@ -76,7 +76,7 @@ func (w *WAL) Write(entries ...pkg.Entry) (int, error) {
 	return 0, nil
 }
 
-func (w *WAL) Read() ([]pkg.Entry, error) {
+func (w *WAL) Read() ([]*sdbf.Entry, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -89,7 +89,7 @@ func (w *WAL) Read() ([]pkg.Entry, error) {
 		return nil, err
 	}
 
-	var Allentries []pkg.Entry
+	var Allentries []*sdbf.Entry
 
 	batchSize := 1000
 	for {
@@ -107,12 +107,12 @@ func (w *WAL) Read() ([]pkg.Entry, error) {
 }
 
 // ReadNext 连续读取指定数量的记录，不重置文件指针
-func (w *WAL) ReadNext(maxCount int) ([]pkg.Entry, bool, error) {
+func (w *WAL) ReadNext(maxCount int) ([]*sdbf.Entry, bool, error) {
 	if w.fd == nil {
 		return nil, false, errNilFD
 	}
 
-	var entries []pkg.Entry
+	var entries []*sdbf.Entry
 	buf := utils.Pool.Get()
 	defer utils.Pool.Put(buf)
 
@@ -152,12 +152,20 @@ func (w *WAL) ReadNext(maxCount int) ([]pkg.Entry, bool, error) {
 		data := buf.Bytes()
 
 		// 反序列化数据
-		var entry pkg.Entry
-		if err := sonic.Unmarshal(data, &entry); err != nil {
+		e := &sdbf.Entry{}
+		if err := proto.Unmarshal(data, e); err != nil {
 			return nil, false, fmt.Errorf("failed to unmarshal entry: %w", err)
 		}
 
-		entries = append(entries, entry)
+		// 转换为sdbf.Entry
+		pkgEntry := &sdbf.Entry{
+			Key:       e.GetKey(),
+			Value:     e.GetValue(),
+			Tombstone: e.GetTombstone(),
+			Version:   e.GetVersion(),
+		}
+
+		entries = append(entries, pkgEntry)
 	}
 
 	return entries, true, nil // 读满指定数量，hasMore = true
