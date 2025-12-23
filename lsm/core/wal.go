@@ -118,20 +118,25 @@ func (w *WAL) ReadAll() ([]*sdbf.Entry, error) {
 }
 
 func (w *WAL) ReadBatch(batchSize int) (chan []*sdbf.Entry, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
 
 	if w.fd == nil {
 		return nil, errNilFD
 	}
 
 	entryChan := make(chan []*sdbf.Entry)
-	// 将文件指针移动到文件开头
-	if _, err := w.fd.Seek(0, io.SeekStart); err != nil {
-		return nil, err
-	}
+
 	go func() {
+
+		w.mu.Lock()
+		defer w.mu.Unlock()
+
+		// 将文件指针移动到文件开头
+		if _, err := w.fd.Seek(0, io.SeekStart); err != nil {
+			panic(err)
+		}
+
 		for {
+
 			entries, hasMore, err := w.readNext(batchSize)
 			if err != nil {
 				err = fmt.Errorf("read wal failed: %w", err)
@@ -143,7 +148,9 @@ func (w *WAL) ReadBatch(batchSize int) (chan []*sdbf.Entry, error) {
 				close(entryChan)
 				break
 			}
+
 		}
+
 	}()
 
 	return entryChan, nil
