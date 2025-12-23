@@ -40,11 +40,11 @@ func (mt *MemTable) Recovery() {
 }
 
 func (mt *MemTable) Set(entry *sdbf.Entry) error {
-	mt.skipList.Set(entry)
 	_, err := mt.wal.Write(entry)
 	if err != nil {
 		return err
 	}
+	mt.skipList.Set(entry)
 	return nil
 }
 
