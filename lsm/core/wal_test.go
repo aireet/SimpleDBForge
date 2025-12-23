@@ -304,6 +304,7 @@ func TestWAL_ErrorHandling(t *testing.T) {
 	// 测试关闭文件后的操作
 	t.Run("已关闭文件的错误处理", func(t *testing.T) {
 		wal.fd.Close()
+		wal.fd = nil // 显式设置为 nil 以触发 errNilFD
 
 		entry := &sdbf.Entry{Key: "test", Value: []byte("value")}
 

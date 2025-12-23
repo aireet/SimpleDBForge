@@ -43,6 +43,7 @@ func (mt *MemTable) Recovery() {
 				mt.skipList.Set(entry)
 			}
 		}
+
 	})
 }
 

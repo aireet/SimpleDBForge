@@ -56,12 +56,11 @@ func (w *WAL) Write(entries ...*sdbf.Entry) (int, error) {
 	count := 0
 	for _, entry := range entries {
 
-		// [数据长度] + [压缩后的数据内容] 小端序
+		// [数据长度] + [数据内容] 小端序
 		// ## 为什么选择小端序
 		// 1. 兼容性好 ：x86/x64 架构（最常见的服务器架构）使用小端序
 		// 2. 性能优势 ：在小端序机器上无需字节序转换
 		// 3. 标准选择 ：许多网络协议和文件格式采用小端序
-		// data length
 		data, err := proto.Marshal(entry)
 		if err != nil {
 			return count, err
