@@ -27,7 +27,11 @@ func (mt *MemTable) Recovery() {
 			return
 		}
 
-		for entries := range entryChan {
+		for {
+			entries := <-entryChan
+			if entries == nil {
+				break
+			}
 			for _, entry := range entries {
 				mt.skipList.Set(entry)
 			}
