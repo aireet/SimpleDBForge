@@ -28,6 +28,15 @@ type WAL struct {
 	version string
 }
 
+func NewWAL(fd *os.File, dir, path, version string) *WAL {
+	return &WAL{
+		fd:      fd,
+		dir:     dir,
+		path:    path,
+		version: version,
+	}
+}
+
 func (w *WAL) Write(entries ...*sdbf.Entry) (int, error) {
 
 	w.mu.Lock()
@@ -44,6 +53,7 @@ func (w *WAL) Write(entries ...*sdbf.Entry) (int, error) {
 	buf := utils.Pool.Get()
 	defer utils.Pool.Put(buf)
 
+	count := 0
 	for _, entry := range entries {
 
 		// [数据长度] + [压缩后的数据内容] 小端序
@@ -54,29 +64,30 @@ func (w *WAL) Write(entries ...*sdbf.Entry) (int, error) {
 		// data length
 		data, err := proto.Marshal(entry)
 		if err != nil {
-			return 0, err
+			return count, err
 		}
 		// 写入数据长度（8字节）
 		if err := binary.Write(buf, binary.LittleEndian, int64(len(data))); err != nil {
-			return 0, fmt.Errorf("failed to write data length: %w", err)
+			return count, fmt.Errorf("failed to write data length: %w", err)
 		}
 		// 写入实际数据内容
 		if _, err := buf.Write(data); err != nil {
-			return 0, fmt.Errorf("failed to write data: %w", err)
+			return count, fmt.Errorf("failed to write data: %w", err)
 		}
+		count++
 	}
 
 	// 写入磁盘
 	if _, err := buf.WriteTo(w.fd); err != nil {
-		return 0, err
+		return count, err
 	}
 	if err := w.fd.Sync(); err != nil {
-		return 0, err
+		return count, err
 	}
-	return 0, nil
+	return count, nil
 }
 
-func (w *WAL) Read() ([]*sdbf.Entry, error) {
+func (w *WAL) ReadAll() ([]*sdbf.Entry, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -93,7 +104,7 @@ func (w *WAL) Read() ([]*sdbf.Entry, error) {
 
 	batchSize := 1000
 	for {
-		entries, hasMore, err := w.ReadNext(batchSize)
+		entries, hasMore, err := w.readNext(batchSize)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +117,40 @@ func (w *WAL) Read() ([]*sdbf.Entry, error) {
 	return Allentries, nil
 }
 
-// ReadNext 连续读取指定数量的记录，不重置文件指针
-func (w *WAL) ReadNext(maxCount int) ([]*sdbf.Entry, bool, error) {
+func (w *WAL) ReadBatch(batchSize int) (chan []*sdbf.Entry, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.fd == nil {
+		return nil, errNilFD
+	}
+
+	entryChan := make(chan []*sdbf.Entry)
+	// 将文件指针移动到文件开头
+	if _, err := w.fd.Seek(0, io.SeekStart); err != nil {
+		return nil, err
+	}
+	go func() {
+		for {
+			entries, hasMore, err := w.readNext(batchSize)
+			if err != nil {
+				err = fmt.Errorf("read wal failed: %w", err)
+				panic(err)
+			}
+
+			entryChan <- entries
+			if !hasMore {
+				close(entryChan)
+				break
+			}
+		}
+	}()
+
+	return entryChan, nil
+}
+
+// readNext 连续读取指定数量的记录，不重置文件指针
+func (w *WAL) readNext(maxCount int) ([]*sdbf.Entry, bool, error) {
 	if w.fd == nil {
 		return nil, false, errNilFD
 	}

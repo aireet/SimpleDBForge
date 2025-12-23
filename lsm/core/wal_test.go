@@ -81,7 +81,7 @@ func TestWAL_BasicWriteRead(t *testing.T) {
 
 	// 测试读取
 	t.Run("读取测试", func(t *testing.T) {
-		entries, err := wal.Read()
+		entries, err := wal.ReadAll()
 		if err != nil {
 			t.Fatalf("读取失败: %v", err)
 		}
@@ -153,7 +153,7 @@ func TestWAL_ReadNext(t *testing.T) {
 		batchSize := 3
 
 		for {
-			entries, hasMore, err := wal.ReadNext(batchSize)
+			entries, hasMore, err := wal.readNext(batchSize)
 			if err != nil {
 				t.Fatalf("分批读取失败: %v", err)
 			}
@@ -211,7 +211,7 @@ func TestWAL_LargeData(t *testing.T) {
 	})
 
 	t.Run("大数据读取", func(t *testing.T) {
-		entries, err := wal.Read()
+		entries, err := wal.ReadAll()
 		if err != nil {
 			t.Fatalf("大数据读取失败: %v", err)
 		}
@@ -276,7 +276,7 @@ func TestWAL_MultipleWrites(t *testing.T) {
 
 	// 验证最终读取结果
 	t.Run("验证所有写入", func(t *testing.T) {
-		entries, err := wal.Read()
+		entries, err := wal.ReadAll()
 		if err != nil {
 			t.Fatalf("读取所有记录失败: %v", err)
 		}
@@ -314,7 +314,7 @@ func TestWAL_ErrorHandling(t *testing.T) {
 		}
 
 		// 读取也应该返回错误
-		_, err = wal.Read()
+		_, err = wal.ReadAll()
 		if err != errNilFD {
 			t.Errorf("期望错误 %v, 实际错误 %v", errNilFD, err)
 		}
@@ -372,6 +372,6 @@ func BenchmarkWAL_Read(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		wal.Read()
+		wal.ReadAll()
 	}
 }
