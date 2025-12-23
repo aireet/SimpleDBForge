@@ -16,6 +16,13 @@ type MemTable struct {
 	walDir   string
 }
 
+func NewMebTable(walDir string) *MemTable {
+	return &MemTable{
+		skipList: pkg.NewSkipList(4, 0.5),
+		walDir:   walDir,
+	}
+}
+
 func (mt *MemTable) Recovery() {
 
 	mt.Once.Do(func() {
@@ -40,6 +47,8 @@ func (mt *MemTable) Recovery() {
 }
 
 func (mt *MemTable) Set(entry *sdbf.Entry) error {
+	mt.mu.Lock()
+	defer mt.mu.Unlock()
 	_, err := mt.wal.Write(entry)
 	if err != nil {
 		return err
@@ -49,5 +58,7 @@ func (mt *MemTable) Set(entry *sdbf.Entry) error {
 }
 
 func (mt *MemTable) Get(key string) (*sdbf.Entry, bool) {
+	mt.mu.RLock()
+	defer mt.mu.RUnlock()
 	return mt.skipList.Get(key)
 }
