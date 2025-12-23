@@ -1,10 +1,10 @@
-package pkg
+package skiplist
 
 import (
 	"testing"
 
-	"github.com/aireet/SimpleDBForge/lsm/utils"
-	"github.com/aireet/SimpleDBForge/proto/sdbf"
+	"github.com/aireet/SimpleDBForge/api/sdbf"
+	"github.com/aireet/SimpleDBForge/internal/utils"
 )
 
 func TestNewSkipList(t *testing.T) {

@@ -1,24 +1,24 @@
-package core
+package lsm
 
 import (
 	"log/slog"
 	"sync"
 
-	"github.com/aireet/SimpleDBForge/lsm/pkg"
-	"github.com/aireet/SimpleDBForge/proto/sdbf"
+	"github.com/aireet/SimpleDBForge/api/sdbf"
+	"github.com/aireet/SimpleDBForge/pkg/skiplist"
 )
 
 type MemTable struct {
 	sync.Once
 	mu       sync.RWMutex
-	skipList *pkg.SkipList
+	skipList *skiplist.SkipList
 	wal      *WAL
 	walDir   string
 }
 
 func NewMebTable(walDir string) *MemTable {
 	return &MemTable{
-		skipList: pkg.NewSkipList(4, 0.5),
+		skipList: skiplist.NewSkipList(4, 0.5),
 		walDir:   walDir,
 	}
 }

@@ -11,5 +11,5 @@ proto: install-tools
 	@echo "生成 protobuf 代码..."
 	protoc --go_out=. \
 	--go_opt=paths=source_relative \
-	proto/sdbf/*.proto
+	api/sdbf/*.proto
 	@echo "protobuf 代码生成完成"

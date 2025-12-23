@@ -1,11 +1,11 @@
-package core
+package lsm
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/aireet/SimpleDBForge/proto/sdbf"
+	"github.com/aireet/SimpleDBForge/api/sdbf"
 )
 
 // 创建测试用的WAL实例

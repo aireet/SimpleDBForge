@@ -1,12 +1,12 @@
-package pkg
+package skiplist
 
 import (
 	"math/rand"
 	"time"
 	"unsafe"
 
-	"github.com/aireet/SimpleDBForge/lsm/utils"
-	"github.com/aireet/SimpleDBForge/proto/sdbf"
+	"github.com/aireet/SimpleDBForge/api/sdbf"
+	"github.com/aireet/SimpleDBForge/internal/utils"
 )
 
 type Element struct {

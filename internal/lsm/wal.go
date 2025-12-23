@@ -1,4 +1,4 @@
-package core
+package lsm
 
 import (
 	"encoding/binary"
@@ -10,8 +10,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/aireet/SimpleDBForge/lsm/utils"
-	"github.com/aireet/SimpleDBForge/proto/sdbf"
+	"github.com/aireet/SimpleDBForge/api/sdbf"
+	"github.com/aireet/SimpleDBForge/internal/utils"
 )
 
 var (
