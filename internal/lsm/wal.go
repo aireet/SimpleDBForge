@@ -206,15 +206,7 @@ func (w *WAL) readNext(maxCount int) ([]*sdbf.Entry, bool, error) {
 			return nil, false, fmt.Errorf("failed to unmarshal entry: %w", err)
 		}
 
-		// 转换为sdbf.Entry
-		pkgEntry := &sdbf.Entry{
-			Key:       e.GetKey(),
-			Value:     e.GetValue(),
-			Tombstone: e.GetTombstone(),
-			Version:   e.GetVersion(),
-		}
-
-		entries = append(entries, pkgEntry)
+		entries = append(entries, e)
 	}
 
 	return entries, true, nil // 读满指定数量，hasMore = true
